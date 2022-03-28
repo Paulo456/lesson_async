@@ -1,8 +1,12 @@
+import asyncio
+import curses
+from random import randint, choice
+
 SPACE_KEY_CODE = 32
-LEFT_KEY_CODE = 260
-RIGHT_KEY_CODE = 261
-UP_KEY_CODE = 259
-DOWN_KEY_CODE = 258
+LEFT_KEY_CODE = 452
+RIGHT_KEY_CODE = 454
+UP_KEY_CODE = 450
+DOWN_KEY_CODE = 456
 
 
 def read_controls(canvas):
@@ -75,3 +79,45 @@ def get_frame_size(text):
     rows = len(lines)
     columns = max([len(line) for line in lines])
     return rows, columns
+
+
+async def fire(canvas, start_row, start_column, rows_speed=-0.3, columns_speed=0):
+    """Display animation of gun shot, direction and speed can be specified."""
+
+    row, column = start_row, start_column
+
+    canvas.addstr(round(row), round(column), '*')
+    await asyncio.sleep(0)
+
+    canvas.addstr(round(row), round(column), 'O')
+    await asyncio.sleep(0)
+    canvas.addstr(round(row), round(column), ' ')
+
+    row += rows_speed
+    column += columns_speed
+
+    symbol = '-' if columns_speed else '|'
+
+    rows, columns = canvas.getmaxyx()
+    max_row, max_column = rows - 1, columns - 1
+
+    curses.beep()
+
+    while 0 < row < max_row and 0 < column < max_column:
+        canvas.addstr(round(row), round(column), symbol)
+        await asyncio.sleep(0)
+        canvas.addstr(round(row), round(column), ' ')
+        row += rows_speed
+        column += columns_speed
+
+
+async def blink(canvas, row, column, symbol='*'):
+    while True:
+        canvas.addstr(row, column, symbol, choice([curses.A_BOLD, curses.A_DIM, curses.A_NORMAL]))
+        await asyncio.sleep(0)
+
+        canvas.addstr(row, column, symbol, choice([curses.A_BOLD, curses.A_DIM, curses.A_NORMAL]))
+        await asyncio.sleep(0)
+
+        canvas.addstr(row, column, symbol, choice([curses.A_BOLD, curses.A_DIM, curses.A_NORMAL]))
+        await asyncio.sleep(0)
