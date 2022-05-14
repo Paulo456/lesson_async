@@ -38,7 +38,8 @@ def draw(canvas):
     rocket_x = max_window_x // 2 - rocket_size_x // 2
     rocket_y = max_window_y - rocket_size_y
     rocket = rocket_fly(canvas, rocket_y, rocket_x)
-    coroutines = [blink(canvas, randint(0, max_window_y - 1), randint(0, max_window_x - 1), choice('+*.:'))
+    coroutines = [blink
+                  (canvas, randint(0, max_window_y - 1), randint(0, max_window_x - 1), choice('+*.:'))
                   for _ in range(150)]
     coroutine_fire = fire(canvas, max_window_y - 1, max_window_x/2)
     do_fire = True
