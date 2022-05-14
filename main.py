@@ -16,7 +16,7 @@ def get_rocket_images():
     return image1, image2
 
 
-async def rocket_fly(canvas, row, column):
+async def draw_rocket_flying(canvas, row, column):
     while True:
         draw_frame(canvas, row, column, rocket_image2, negative=True)
         draw_frame(canvas, row, column, rocket_image1)
@@ -27,7 +27,7 @@ async def rocket_fly(canvas, row, column):
         await asyncio.sleep(0)
 
 
-async def rocket_negative(canvas, row, column):
+async def clear_rocket_from_frame(canvas, row, column):
     while True:
         draw_frame(canvas, row, column, rocket_image1, negative=True)
         draw_frame(canvas, row, column, rocket_image2, negative=True)
@@ -41,7 +41,7 @@ def draw(canvas):
     rocket_size_y, rocket_size_x = get_frame_size(rocket_image1)
     rocket_x = max_window_x // 2 - rocket_size_x // 2
     rocket_y = max_window_y - rocket_size_y
-    rocket = rocket_fly(canvas, rocket_y, rocket_x)
+    rocket = draw_rocket_flying(canvas, rocket_y, rocket_x)
     coroutines = [blink(canvas, randint(0, max_window_y - 1), randint(0, max_window_x - 1), choice('+*.:'))
                   for _ in range(150)]
     coroutine_fire = fire(canvas, max_window_y - 1, max_window_x / 2)
@@ -56,14 +56,14 @@ def draw(canvas):
                 do_fire = False
         if pressed_key_code != (0, 0, False):
             rows_direction, columns_direction, space_pressed = pressed_key_code
-            rocket_wipe = rocket_negative(canvas, rocket_y, rocket_x)
+            rocket_wipe = clear_rocket_from_frame(canvas, rocket_y, rocket_x)
             rocket_wipe.send(None)
             rocket_x += columns_direction
             rocket_x = median([0, rocket_x, max_window_x - rocket_size_x])
             rocket_y += rows_direction
             rocket_y = median([0, rocket_y, max_window_y - rocket_size_y])
 
-            rocket = rocket_fly(canvas, rocket_y, rocket_x)
+            rocket = draw_rocket_flying(canvas, rocket_y, rocket_x)
         rocket.send(None)
         canvas.refresh()
         time.sleep(0.1)
