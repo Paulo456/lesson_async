@@ -1,6 +1,6 @@
 import asyncio
 import curses
-from random import randint, choice
+from random import choice
 
 SPACE_KEY_CODE = 32
 LEFT_KEY_CODE = 452
@@ -10,7 +10,7 @@ DOWN_KEY_CODE = 456
 
 
 def read_controls(canvas):
-    """Read keys pressed and returns tuple witl controls state."""
+    """Read keys pressed and returns tuple with controls state."""
 
     rows_direction = columns_direction = 0
     space_pressed = False
@@ -73,7 +73,7 @@ def draw_frame(canvas, start_row, start_column, text, negative=False):
 
 
 def get_frame_size(text):
-    """Calculate size of multiline text fragment, return pair — number of rows and colums."""
+    """Calculate size of multiline text fragment, return pair — number of rows and columns."""
 
     lines = text.splitlines()
     rows = len(lines)
