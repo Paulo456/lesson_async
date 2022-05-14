@@ -37,14 +37,15 @@ async def clear_rocket_from_frame(canvas, row, column):
 def draw(canvas):
     curses.curs_set(False)
     canvas.nodelay(True)
-    max_window_y, max_window_x = canvas.getmaxyx()
+    # The getmaxy function actually returns the width and height. The coordinates are one value less.
+    max_window_y, max_window_x = [i-1 for i in canvas.getmaxyx()]
     rocket_size_y, rocket_size_x = get_frame_size(rocket_image1)
     rocket_x = max_window_x // 2 - rocket_size_x // 2
     rocket_y = max_window_y - rocket_size_y
     rocket = draw_rocket_flying(canvas, rocket_y, rocket_x)
-    coroutines = [blink(canvas, randint(0, max_window_y - 1), randint(0, max_window_x - 1), choice('+*.:'))
+    coroutines = [blink(canvas, randint(0, max_window_y), randint(0, max_window_x), choice('+*.:'))
                   for _ in range(150)]
-    coroutine_fire = fire(canvas, max_window_y - 1, max_window_x / 2)
+    coroutine_fire = fire(canvas, max_window_y, max_window_x / 2)
     do_fire = True
     while True:
         [coroutine.send(None) for coroutine in coroutines]
