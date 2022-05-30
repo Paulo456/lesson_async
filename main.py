@@ -17,17 +17,41 @@ def get_rocket_images():
     return image1, image2
 
 
-async def draw_rocket_flying(canvas, rocket_coordinates, rocket_size, max_window, move_to=(0, 0)):
-    draw_frame(canvas, rocket_coordinates[0], rocket_coordinates[1], rocket_image1, negative=True)
-    draw_frame(canvas, rocket_coordinates[0], rocket_coordinates[1], rocket_image2, negative=True)
-    for i in (0, 1):
-        rocket_coordinates[i] += move_to[i]
-        rocket_coordinates[i] = median([0, rocket_coordinates[i], max_window[i] - rocket_size[i]])
-    images = cycle((rocket_image1, rocket_image2))
+def get_start_rocket_coordinates(window_max_yx, rocket_size_yx):
+    window_max_y, window_max_x = window_max_yx
+    rocket_size_y, rocket_size_x = rocket_size_yx
+    return [window_max_y - rocket_size_y, window_max_x // 2 - rocket_size_x // 2]
+
+
+def draw_negative_rocket(canvas, rocket_coordinates):
+    [draw_frame(canvas, *rocket_coordinates, rocket_image, negative=True)
+     for rocket_image in rocket_images]
+
+
+def calculate_shift_coordinate(rocket_coordinate, shift, window_max_coordinate, rocket_size_coordinate):
+    rocket_coordinate += shift
+    rocket_coordinate = median([0, rocket_coordinate, window_max_coordinate - rocket_size_coordinate])
+    return rocket_coordinate
+
+
+def calculate_rocket_position(rocket_coordinates, rocket_size, window_max_yx, rocket_shifting):
+    shift_on_y, shift_on_x = rocket_shifting
+    rocket_size_y, rocket_size_x = rocket_size
+    window_max_y, window_max_x = window_max_yx
+    rocket_coordinate_y, rocket_coordinate_x = rocket_coordinates
+    rocket_coordinate_y = calculate_shift_coordinate(rocket_coordinate_y, shift_on_y, window_max_y, rocket_size_y)
+    rocket_coordinate_x = calculate_shift_coordinate(rocket_coordinate_x, shift_on_x, window_max_x, rocket_size_x)
+    return [rocket_coordinate_y, rocket_coordinate_x]
+
+
+async def draw_rocket_flying(canvas, rocket_coordinates, rocket_size, window_max_yx, rocket_shifting=(0, 0)):
+    draw_negative_rocket(canvas, rocket_coordinates)
+    rocket_coordinates[:] = calculate_rocket_position(rocket_coordinates, rocket_size, window_max_yx, rocket_shifting)
+    images = cycle(rocket_images)
+
     while True:
-        draw_frame(canvas, rocket_coordinates[0], rocket_coordinates[1], next(images), negative=True)
-        draw_frame(canvas, rocket_coordinates[0], rocket_coordinates[1], next(images))
-        next(images)
+        draw_negative_rocket(canvas, rocket_coordinates)
+        draw_frame(canvas, *rocket_coordinates, next(images))
         await asyncio.sleep(0)
         # skip one beat
         await asyncio.sleep(0)
@@ -38,13 +62,14 @@ def draw(canvas):
     canvas.nodelay(True)
     # The getmaxy function actually returns the width and height. The coordinates are one value less.
     # The coordinates are stored in the following order: rows - 0, columns - 1
-    max_window = [i - 1 for i in canvas.getmaxyx()]
-    rocket_size = get_frame_size(rocket_image1)
-    rocket_coordinates = [max_window[0] - rocket_size[0], max_window[1] // 2 - rocket_size[1] // 2]
+    window_max_yx = [screen_size - 1 for screen_size in canvas.getmaxyx()]
+    rocket_size_yx = get_frame_size(rocket_images[0])
+    rocket_coordinates = get_start_rocket_coordinates(window_max_yx, rocket_size_yx)
 
-    rocket = draw_rocket_flying(canvas, rocket_coordinates, rocket_size, max_window)
-    coroutine_fire = fire(canvas, max_window[0], max_window[1] / 2)
-    coroutines = [blink(canvas, randint(0, max_window[0]), randint(0, max_window[1]), choice('+*.:'))
+    rocket = draw_rocket_flying(canvas, rocket_coordinates, rocket_size_yx, window_max_yx)
+    window_max_y, window_max_x = window_max_yx
+    coroutine_fire = fire(canvas, window_max_y, window_max_x / 2)
+    coroutines = [blink(canvas, randint(0, window_max_y), randint(0, window_max_x), choice('+*.:'))
                   for _ in range(150)]
 
     coroutines.append(coroutine_fire)
@@ -52,10 +77,10 @@ def draw(canvas):
     while True:
         pressed_key_code = read_controls(canvas)
         if pressed_key_code != (0, 0, False):
-            row, column, space_pressed = pressed_key_code
-            move_to = row, column
+            shift_on_y, shift_on_x, space_pressed = pressed_key_code
+            rocket_shifting = shift_on_y, shift_on_x
             coroutines.pop()
-            rocket = draw_rocket_flying(canvas, rocket_coordinates, rocket_size, max_window, move_to)
+            rocket = draw_rocket_flying(canvas, rocket_coordinates, rocket_size_yx, window_max_yx, rocket_shifting)
             coroutines.append(rocket)
 
         for coroutine in coroutines.copy():
@@ -63,13 +88,13 @@ def draw(canvas):
                 coroutine.send(None)
             except StopIteration:
                 coroutines.remove(coroutine)
-        if len(coroutines) == 0:
+        if not coroutines:
             break
         canvas.refresh()
         time.sleep(0.1)
 
 
 if __name__ == '__main__':
-    rocket_image1, rocket_image2 = get_rocket_images()
+    rocket_images = get_rocket_images()
     curses.update_lines_cols()
     curses.wrapper(draw)
