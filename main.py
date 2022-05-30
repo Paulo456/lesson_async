@@ -69,19 +69,17 @@ def draw(canvas):
     rocket = draw_rocket_flying(canvas, rocket_coordinates, rocket_size_yx, window_max_yx)
     window_max_y, window_max_x = window_max_yx
     coroutine_fire = fire(canvas, window_max_y, window_max_x / 2)
-    coroutines = [blink(canvas, randint(0, window_max_y), randint(0, window_max_x), choice('+*.:'))
-                  for _ in range(150)]
+    stars = [blink(canvas, randint(0, window_max_y), randint(0, window_max_x), choice('+*.:'))
+             for _ in range(150)]
+    coroutines = [*stars, coroutine_fire, rocket]
 
-    coroutines.append(coroutine_fire)
-    coroutines.append(rocket)
     while True:
         pressed_key_code = read_controls(canvas)
         if pressed_key_code != (0, 0, False):
             shift_on_y, shift_on_x, space_pressed = pressed_key_code
             rocket_shifting = shift_on_y, shift_on_x
-            coroutines.pop()
             rocket = draw_rocket_flying(canvas, rocket_coordinates, rocket_size_yx, window_max_yx, rocket_shifting)
-            coroutines.append(rocket)
+            coroutines = [*stars, rocket]
 
         for coroutine in coroutines.copy():
             try:
